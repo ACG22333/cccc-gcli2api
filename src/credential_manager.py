@@ -215,10 +215,11 @@ class CredentialManager:
                     china_tz = timezone(timedelta(hours=8))
                     human_readable_time = datetime.fromtimestamp(temp_disabled_until, tz=china_tz).strftime('%Y-%m-%d %H:%M:%S')
                     log.info(f"凭证 {cred_name} 的临时禁用已到期（解禁时间: {human_readable_time} 北京时间），恢复。")
+                    # 恢复凭证时，必须重置所有错误状态
                     await self.update_credential_state(cred_name, {
                         "disabled": False,
                         "temp_disabled_until": None,
-                        "error_codes": [],
+                        "error_codes": [],  # 关键：清除所有历史错误码
                     })
         except Exception as e:
             log.error(f"恢复过期临时禁用时出错: {e}")
@@ -331,11 +332,16 @@ class CredentialManager:
         """设置凭证的启用/禁用状态"""
         try:
             state_updates = {"disabled": disabled}
+            # 增强：在启用凭证时，应清除所有相关的错误状态
+            if not disabled:
+                state_updates["error_codes"] = []
+                state_updates["temp_disabled_until"] = None
+
             success = await self.update_credential_state(credential_name, state_updates)
-            
+
             if success:
                 action = "disabled" if disabled else "enabled"
-                log.info(f"Credential {action}: {credential_name}")
+                log.info(f"Credential manually {action}: {credential_name}")
             
             return success
             
