@@ -293,10 +293,9 @@ class FileStorageManager:
             all_data = await self._credentials_cache_manager.get_all()
             existing_state = all_data.get(filename, {})
             
-            # 创建新的section数据：凭证数据 + 状态数据
-            final_data = self.get_default_state()
-            final_data.update(existing_state)
-            final_data.update(credential_data)  # 凭证数据覆盖状态数据中的同名字段
+            # 修复：直接在现有状态上更新，而不是从默认状态开始重置
+            final_data = existing_state.copy()
+            final_data.update(credential_data)
             
             # 更新整个数据集
             all_data[filename] = final_data
