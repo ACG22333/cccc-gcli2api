@@ -422,8 +422,10 @@ class CredentialManager:
                         human_readable_time = datetime.fromtimestamp(temp_disabled_until, tz=china_tz).strftime('%Y-%m-%d %H:%M:%S')
                         log.info(f"凭证 {credential_name} 因429错误被动态禁用，直至: {human_readable_time} (北京时间)")
                     else:
-                        # 如果API没有提供重置时间，则只记录错误，不禁用
-                        log.warning(f"凭证 {credential_name} 收到429错误，但API未提供重置时间，本次不禁用。")
+                        # 如果API没有提供重置时间，则根据用户策略执行永久禁用
+                        state_updates["disabled"] = True
+                        state_updates["temp_disabled_until"] = None  # 确保持久禁用
+                        log.warning(f"凭证 {credential_name} 收到429错误且无重置时间，根据策略执行永久禁用。")
 
                 elif error_code:
                     # 处理其他错误码
